@@ -40,6 +40,6 @@ if (empty($content)) {
 }
 $union = "${content}:${union}";
 exec("sudo umount -l /var/www/localhost/htdocs");
-exec("sudo unionfs '/root/base:/tmp/htdocs:${union}' /var/www/localhost/htdocs -o allow_other");
+exec("sudo unionfs '/root/base:${union}' /var/www/localhost/htdocs -o allow_other");
 file_put_contents("/tmp/union", $union);
 echo "OK";
