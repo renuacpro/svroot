@@ -3,7 +3,8 @@
 $zip = $_GET["file"];
 require("wake.php");
 $union = file_get_contents("/tmp/union");
-if (strpos($union, $zip) !== false) {
+$in_ramdisk = @filesize("/mnt/ramdisk/${zip}") === 0;
+if (!$in_ramdisk && strpos($union, $zip) !== false) {
 	die("ALREADY_MOUNTED");
 }
 if (!file_exists("/mnt/games/${zip}")) {
@@ -11,7 +12,22 @@ if (!file_exists("/mnt/games/${zip}")) {
 	die("NO_SUCH_FILE");
 }
 exec("mkdir /tmp/${zip} /tmp/_${zip}");
-exec("sudo fuse-zip -r /mnt/games/${zip} /tmp/${zip} -o allow_other", $output, $result);
+$size = filesize("/mnt/games/${zip}");
+// optimization: copy ZIPs over 1 GB into memory
+// negative size = greater than 2 GB (yay for overflows)
+if (($size > (1 << 30) || $size < 0) && file_exists("/tmp/enable_ramdisk")) {
+	$file = "/mnt/ramdisk/${zip}";
+	exec("truncate -s 0 /mnt/ramdisk/*"); // hack to avoid unmounting
+	// using curl directly is faster than copying with curlftpfs
+	exec("curl -u games:adobesucks ftp://10.0.2.2:22400/${zip} -o ${file}");
+	if ($in_ramdisk) {
+		// if we had already mounted this file, we're done
+		die("OK");
+	}
+} else {
+	$file = "/mnt/games/${zip}";
+}
+exec("sudo fuse-zip -r ${file} /tmp/${zip} -o allow_other", $output, $result);
 if ($result > 0) {
 	http_response_code(400);
 	die("BAD_ZIP");
