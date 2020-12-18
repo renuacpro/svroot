@@ -30,14 +30,10 @@ if (strpos($union, $device) !== false) {
 	die("ALREADY_MOUNTED");
 }
 error_log("Mounting /dev/${device}");
-exec("mkdir /tmp/${device} /tmp/_${device}");
-exec("sudo fuse-zip -r /mnt/dev/${device} /tmp/${device} -o allow_other", $output, $result);
-if ($result > 0) {
-	http_response_code(400);
-	die("BAD_ZIP");
-}
-exec("sudo fuzzyfs /tmp/${device} /tmp/_${device} -o allow_other");
-$content = exec("find /tmp/_${device} -name content");
+exec("sudo ln -s /dev/${device} /tmp/${device}.zip");
+exec("mkdir /tmp/${device}");
+exec("sudo fuzzyfs /root/.avfs/tmp/${device}.zip# /tmp/${device} -o allow_other");
+$content = exec("find /tmp/${device} -name content");
 if (empty($content)) {
 	http_response_code(400);
 	die("NO_CONTENT_FOLDER");
