@@ -25,6 +25,7 @@ if (!$device) {
 	http_response_code(400);
 	die("NO_SUCH_FILE");
 }
+// Race possible here
 $union = file_get_contents("/tmp/union");
 if (strpos($union, $device) !== false) {
 	die("ALREADY_MOUNTED");
@@ -38,8 +39,15 @@ if (empty($content)) {
 	http_response_code(400);
 	die("NO_CONTENT_FOLDER");
 }
-$union = "${content}:${union}";
-exec("sudo umount -l /var/www/localhost/htdocs");
-exec("sudo unionfs '/root/base:${union}' /var/www/localhost/htdocs -o allow_other");
+$lock = fopen("/tmp/lock", "w+");
+if (flock($lock, LOCK_EX)) {
+	$union = file_get_contents("/tmp/union");
+	$union = "${content}:${union}";
+	exec("sudo umount -l /var/www/localhost/htdocs");
+	exec("sudo unionfs '/root/base:${union}' /var/www/localhost/htdocs -o allow_other");
+	file_put_contents("/tmp/union", $union);
+	flock($lock, LOCK_UN);
+	fclose($lock);
+}
 file_put_contents("/tmp/union", $union);
 echo "OK";
