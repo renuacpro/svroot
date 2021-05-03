@@ -34,8 +34,8 @@ error_log("Mounting /dev/${device}");
 exec("sudo ln -s /dev/${device} /tmp/${device}.zip");
 exec("mkdir /tmp/${device}");
 exec("sudo fuzzyfs /root/.avfs/tmp/${device}.zip# /tmp/${device} -o allow_other");
-$content = exec("find /tmp/${device} -name content");
-if (empty($content)) {
+$content = "/tmp/${device}/content";
+if (!is_dir($content)) {
 	http_response_code(400);
 	die("NO_CONTENT_FOLDER");
 }
