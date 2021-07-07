@@ -13,6 +13,8 @@ RewriteRule ^(.*[^/])$ /$1/ [S=2,R=301]
 # rewrite to /<host>/<path>
 RewriteCond %{ENV:REDIRECT_STATUS} ^$
 RewriteCond %{HTTP_HOST} ^([^:]+)
+# do not rewrite if asking for localhost
+RewriteCond %1 !^127\.0\.0\.1|localhost$
 RewriteRule (.*) /%1/$1 [S=1,E=INITIAL_REQUEST_URI:$1]
 
 # if rewrite failed, forward to the legacy server
