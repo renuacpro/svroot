@@ -1,0 +1,21 @@
+Header set Access-Control-Allow-Origin "*"
+
+RewriteEngine On
+RewriteBase /
+
+# fix trailing slash problem
+RewriteCond %{ENV:REDIRECT_STATUS} ^$
+# remove port from host
+RewriteCond %{HTTP_HOST} ^([^:]+)
+RewriteCond %{DOCUMENT_ROOT}/%1/$1 -d
+RewriteRule ^(.*[^/])$ /$1/ [S=2,R=301]
+
+# rewrite to /<host>/<path>
+RewriteCond %{ENV:REDIRECT_STATUS} ^$
+RewriteCond %{HTTP_HOST} ^([^:]+)
+RewriteRule (.*) /%1/$1 [S=1,E=INITIAL_REQUEST_URI:$1]
+
+# if rewrite failed, forward to the legacy server
+RewriteCond %{ENV:REDIRECT_STATUS} ^.
+RewriteCond %{REQUEST_FILENAME} !-f
+RewriteRule ^ http://10.0.2.2:22600/%{ENV:REDIRECT_INITIAL_REQUEST_URI} [P]
